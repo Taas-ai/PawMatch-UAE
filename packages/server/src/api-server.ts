@@ -3,6 +3,11 @@ import cors from 'cors';
 import { createDb } from '@pawmatch/db';
 import { authRouter } from './routes/auth';
 import { petsRouter } from './routes/pets';
+import { matchesRouter } from './routes/matches';
+import { messagesRouter } from './routes/messages';
+import { aiToolsRouter } from './routes/ai-tools';
+import { contractsRouter } from './routes/contracts';
+import { resourcesRouter } from './routes/resources';
 
 export function createApp(dbPath: string = './pawmatch.db') {
   const db = createDb(dbPath);
@@ -13,6 +18,11 @@ export function createApp(dbPath: string = './pawmatch.db') {
 
   app.use('/api/auth', authRouter(db));
   app.use('/api/pets', petsRouter(db));
+  app.use('/api/matches', matchesRouter(db));
+  app.use('/api/messages', messagesRouter(db));
+  app.use('/api', aiToolsRouter(db));
+  app.use('/api/contracts', contractsRouter(db));
+  app.use('/api/resources', resourcesRouter());
 
   return app;
 }
