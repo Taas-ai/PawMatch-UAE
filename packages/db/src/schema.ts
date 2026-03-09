@@ -4,8 +4,10 @@ import { sql } from 'drizzle-orm';
 export const users = sqliteTable('users', {
   id: text('id').primaryKey(),
   email: text('email').notNull().unique(),
-  passwordHash: text('password_hash').notNull(),
+  passwordHash: text('password_hash'),
   name: text('name').notNull(),
+  authProvider: text('auth_provider', { enum: ['email', 'google', 'apple'] }).notNull().default('email'),
+  authProviderId: text('auth_provider_id'),
   phone: text('phone'),
   emirate: text('emirate'),
   role: text('role', { enum: ['owner', 'breeder', 'vet', 'admin'] }).notNull().default('owner'),

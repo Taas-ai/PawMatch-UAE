@@ -70,8 +70,10 @@ CREATE TABLE `pets` (
 CREATE TABLE `users` (
 	`id` text PRIMARY KEY NOT NULL,
 	`email` text NOT NULL,
-	`password_hash` text NOT NULL,
+	`password_hash` text,
 	`name` text NOT NULL,
+	`auth_provider` text DEFAULT 'email' NOT NULL,
+	`auth_provider_id` text,
 	`phone` text,
 	`emirate` text,
 	`role` text DEFAULT 'owner' NOT NULL,

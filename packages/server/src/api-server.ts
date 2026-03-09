@@ -8,6 +8,7 @@ import { messagesRouter } from './routes/messages';
 import { aiToolsRouter } from './routes/ai-tools';
 import { contractsRouter } from './routes/contracts';
 import { resourcesRouter } from './routes/resources';
+import { socialAuthRouter } from './routes/social-auth';
 
 export function createApp(dbPath: string = './pawmatch.db') {
   const db = createDb(dbPath);
@@ -17,6 +18,7 @@ export function createApp(dbPath: string = './pawmatch.db') {
   app.use(express.json());
 
   app.use('/api/auth', authRouter(db));
+  app.use('/api/auth', socialAuthRouter(db));
   app.use('/api/pets', petsRouter(db));
   app.use('/api/matches', matchesRouter(db));
   app.use('/api/messages', messagesRouter(db));

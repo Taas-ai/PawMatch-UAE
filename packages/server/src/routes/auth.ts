@@ -41,6 +41,10 @@ export function authRouter(db: PawMatchDb): Router {
       res.status(401).json({ error: 'Invalid credentials' });
       return;
     }
+    if (!user.passwordHash) {
+      res.status(400).json({ error: 'This account uses social login. Please sign in with Google or Apple.' });
+      return;
+    }
     const valid = await bcrypt.compare(password, user.passwordHash);
     if (!valid) {
       res.status(401).json({ error: 'Invalid credentials' });

@@ -12,8 +12,10 @@ function createTestDb() {
     CREATE TABLE users (
       id TEXT PRIMARY KEY,
       email TEXT NOT NULL UNIQUE,
-      password_hash TEXT NOT NULL,
+      password_hash TEXT,
       name TEXT NOT NULL,
+      auth_provider TEXT NOT NULL DEFAULT 'email',
+      auth_provider_id TEXT,
       phone TEXT,
       emirate TEXT,
       role TEXT NOT NULL DEFAULT 'owner',
