@@ -56,6 +56,20 @@ export const api = {
       request<Record<string, unknown>>(`/profile-review/${petId}`, { method: 'POST', body: JSON.stringify(data || {}) }),
     vetAdvisor: (petId: string, data?: Record<string, unknown>) =>
       request<Record<string, unknown>>(`/vet-advisor/${petId}`, { method: 'POST', body: JSON.stringify(data || {}) }),
+    analyzePetPhoto: (petId: string, imageUrl: string, symptoms?: string) =>
+      request<Record<string, unknown>>(`/diagnostic/${petId}`, {
+        method: 'POST',
+        body: JSON.stringify({ imageUrl, symptoms }),
+      }),
+    getDiagnosticHistory: (petId: string) =>
+      request<Record<string, unknown>[]>(`/diagnostic/${petId}`),
+    scanDocument: (petId: string, imageUrl: string, documentType: string) =>
+      request<Record<string, unknown>>(`/documents/${petId}/scan`, {
+        method: 'POST',
+        body: JSON.stringify({ imageUrl, documentType }),
+      }),
+    getDocumentHistory: (petId: string) =>
+      request<Record<string, unknown>[]>(`/documents/${petId}`),
   },
   contracts: {
     create: (data: Record<string, unknown>) => request<Record<string, unknown>>('/contracts', { method: 'POST', body: JSON.stringify(data) }),

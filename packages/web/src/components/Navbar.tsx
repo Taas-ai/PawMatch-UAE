@@ -64,6 +64,8 @@ export function Navbar() {
                       <DropdownLink to="/tools/breed-detect">Breed Detect</DropdownLink>
                       <DropdownLink to="/tools/translate">Translate</DropdownLink>
                       <DropdownLink to="/tools/vet-advisor">Vet Advisor</DropdownLink>
+                      <DropdownLink to="/tools/diagnostic">AI Diagnostics</DropdownLink>
+                      <DropdownLink to="/tools/document-scan">Document Scanner</DropdownLink>
                     </div>
                   )}
                 </div>
@@ -152,6 +154,8 @@ export function Navbar() {
                   <MobileLink to="/tools/breed-detect" onClick={() => setMobileOpen(false)}>Breed Detect</MobileLink>
                   <MobileLink to="/tools/translate" onClick={() => setMobileOpen(false)}>Translate</MobileLink>
                   <MobileLink to="/tools/vet-advisor" onClick={() => setMobileOpen(false)}>Vet Advisor</MobileLink>
+                  <MobileLink to="/tools/diagnostic" onClick={() => setMobileOpen(false)}>AI Diagnostics</MobileLink>
+                  <MobileLink to="/tools/document-scan" onClick={() => setMobileOpen(false)}>Document Scanner</MobileLink>
                 </div>
                 <div className="pt-2 mt-2 border-t border-gray-100">
                   {/* Language Toggle (mobile) */}
