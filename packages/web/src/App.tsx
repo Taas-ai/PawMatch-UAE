@@ -5,6 +5,16 @@ import { Landing } from '@/pages/Landing';
 import { Login } from '@/pages/Login';
 import { Register } from '@/pages/Register';
 import { Dashboard } from '@/pages/Dashboard';
+import { PetsList } from '@/pages/PetsList';
+import { PetCreate } from '@/pages/PetCreate';
+import { PetDetail } from '@/pages/PetDetail';
+import { PetEdit } from '@/pages/PetEdit';
+import { MatchesList } from '@/pages/MatchesList';
+import { MatchDetail } from '@/pages/MatchDetail';
+import { MatchCreate } from '@/pages/MatchCreate';
+import { BreedDetect } from '@/pages/BreedDetect';
+import { Translate } from '@/pages/Translate';
+import { VetAdvisor } from '@/pages/VetAdvisor';
 
 export default function App() {
   return (
@@ -22,6 +32,16 @@ export default function App() {
             </ProtectedRoute>
           }
         />
+        <Route path="/pets" element={<ProtectedRoute><PetsList /></ProtectedRoute>} />
+        <Route path="/pets/new" element={<ProtectedRoute><PetCreate /></ProtectedRoute>} />
+        <Route path="/pets/:id" element={<ProtectedRoute><PetDetail /></ProtectedRoute>} />
+        <Route path="/pets/:id/edit" element={<ProtectedRoute><PetEdit /></ProtectedRoute>} />
+        <Route path="/matches" element={<ProtectedRoute><MatchesList /></ProtectedRoute>} />
+        <Route path="/matches/new" element={<ProtectedRoute><MatchCreate /></ProtectedRoute>} />
+        <Route path="/matches/:id" element={<ProtectedRoute><MatchDetail /></ProtectedRoute>} />
+        <Route path="/tools/breed-detect" element={<ProtectedRoute><BreedDetect /></ProtectedRoute>} />
+        <Route path="/tools/translate" element={<ProtectedRoute><Translate /></ProtectedRoute>} />
+        <Route path="/tools/vet-advisor" element={<ProtectedRoute><VetAdvisor /></ProtectedRoute>} />
       </Routes>
     </div>
   );
