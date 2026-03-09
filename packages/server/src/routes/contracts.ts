@@ -30,6 +30,12 @@ export function contractsRouter(db: PawMatchDb): Router {
       return;
     }
 
+    // Ownership check: requesting user must own one of the pets
+    if (petA.ownerId !== req.userId && petB.ownerId !== req.userId) {
+      res.status(403).json({ error: 'Not authorized' });
+      return;
+    }
+
     const id = uuid();
     db.insert(breedingContracts).values({
       id,
@@ -51,6 +57,13 @@ export function contractsRouter(db: PawMatchDb): Router {
       res.status(404).json({ error: 'Contract not found' });
       return;
     }
+
+    // Ownership check: only contract parties can view
+    if (contract.ownerAId !== req.userId && contract.ownerBId !== req.userId) {
+      res.status(403).json({ error: 'Not authorized' });
+      return;
+    }
+
     res.json(contract);
   });
 

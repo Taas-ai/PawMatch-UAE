@@ -1,5 +1,6 @@
 import express from 'express';
 import cors from 'cors';
+import rateLimit from 'express-rate-limit';
 import { createDb } from '@pawmatch/db';
 import { authRouter } from './routes/auth';
 import { petsRouter } from './routes/pets';
@@ -15,8 +16,54 @@ export function createApp(dbPath: string = './pawmatch.db') {
   const db = createDb(dbPath);
   const app = express();
 
-  app.use(cors());
-  app.use(express.json());
+  const allowedOrigins = process.env.ALLOWED_ORIGINS?.split(',') || [
+    'http://localhost:5173',
+    'http://localhost:3001',
+    'capacitor://localhost',
+    'http://localhost',
+  ];
+  app.use(cors({
+    origin: (origin, callback) => {
+      // Allow requests with no origin (mobile apps, curl, supertest, etc.)
+      if (!origin || allowedOrigins.includes(origin)) {
+        callback(null, true);
+      } else {
+        callback(new Error('Not allowed by CORS'));
+      }
+    },
+    credentials: true,
+  }));
+  app.use(express.json({ limit: '1mb' }));
+
+  // General API rate limit
+  const apiLimiter = rateLimit({
+    windowMs: 15 * 60 * 1000, // 15 minutes
+    max: 100,
+    standardHeaders: true,
+    legacyHeaders: false,
+    message: { error: 'Too many requests, please try again later' },
+  });
+
+  // Strict rate limit for auth endpoints
+  const authLimiter = rateLimit({
+    windowMs: 15 * 60 * 1000,
+    max: 10,
+    standardHeaders: true,
+    legacyHeaders: false,
+    message: { error: 'Too many authentication attempts, please try again later' },
+  });
+
+  // AI endpoint rate limit (cost protection)
+  const aiLimiter = rateLimit({
+    windowMs: 60 * 60 * 1000, // 1 hour
+    max: 20,
+    standardHeaders: true,
+    legacyHeaders: false,
+    message: { error: 'AI request limit reached, please try again later' },
+  });
+
+  app.use('/api', apiLimiter);
+  app.use('/api/auth', authLimiter);
 
   app.use('/api/auth', authRouter(db));
   app.use('/api/auth', socialAuthRouter(db));
@@ -24,8 +71,8 @@ export function createApp(dbPath: string = './pawmatch.db') {
   app.use('/api/matches', matchesRouter(db));
   app.use('/api/messages', messagesRouter(db));
   app.use('/api/resources', resourcesRouter());
-  app.use('/api', diagnosticsRouter(db));
-  app.use('/api', aiToolsRouter(db));
+  app.use('/api', aiLimiter, diagnosticsRouter(db));
+  app.use('/api', aiLimiter, aiToolsRouter(db));
   app.use('/api/contracts', contractsRouter(db));
 
   return app;

@@ -16,6 +16,20 @@ export function authRouter(db: PawMatchDb): Router {
         res.status(400).json({ error: 'email, password, and name are required' });
         return;
       }
+
+      // Email validation
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      if (!emailRegex.test(email)) {
+        res.status(400).json({ error: 'Invalid email format' });
+        return;
+      }
+
+      // Password strength
+      if (password.length < 8) {
+        res.status(400).json({ error: 'Password must be at least 8 characters' });
+        return;
+      }
+
       const existing = db.select().from(users).where(eq(users.email, email)).get();
       if (existing) {
         res.status(409).json({ error: 'Email already registered' });

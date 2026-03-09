@@ -5,6 +5,7 @@ import { pets, petDiagnostics, petDocuments, PawMatchDb } from '@pawmatch/db';
 import { requireAuth, AuthRequest } from '../middleware/auth';
 import { petDiagnosticFlow } from '../flows/pet-diagnostic';
 import { vetDocumentOCRFlow } from '../flows/vet-document-ocr';
+import { validateImageUrl } from '../utils/validate-url';
 
 export function diagnosticsRouter(db: PawMatchDb): Router {
   const router = Router();
@@ -16,8 +17,21 @@ export function diagnosticsRouter(db: PawMatchDb): Router {
       const pet = db.select().from(pets).where(eq(pets.id, req.params.petId)).get();
       if (!pet) { res.status(404).json({ error: 'Pet not found' }); return; }
 
+      // Ownership check
+      if (pet.ownerId !== req.userId) {
+        res.status(403).json({ error: 'Not authorized' });
+        return;
+      }
+
       const { imageUrl, symptoms } = req.body;
       if (!imageUrl) { res.status(400).json({ error: 'imageUrl is required' }); return; }
+
+      // SSRF protection
+      const urlCheck = validateImageUrl(imageUrl);
+      if (!urlCheck.valid) {
+        res.status(400).json({ error: urlCheck.error });
+        return;
+      }
 
       const result = await petDiagnosticFlow({
         imageUrl,
@@ -51,6 +65,15 @@ export function diagnosticsRouter(db: PawMatchDb): Router {
   // GET /diagnostic/:petId — diagnostic history
   router.get('/diagnostic/:petId', async (req: AuthRequest, res) => {
     try {
+      const pet = db.select().from(pets).where(eq(pets.id, req.params.petId)).get();
+      if (!pet) { res.status(404).json({ error: 'Pet not found' }); return; }
+
+      // Ownership check
+      if (pet.ownerId !== req.userId) {
+        res.status(403).json({ error: 'Not authorized' });
+        return;
+      }
+
       const results = db.select().from(petDiagnostics)
         .where(eq(petDiagnostics.petId, req.params.petId))
         .orderBy(desc(petDiagnostics.createdAt))
@@ -68,9 +91,22 @@ export function diagnosticsRouter(db: PawMatchDb): Router {
       const pet = db.select().from(pets).where(eq(pets.id, req.params.petId)).get();
       if (!pet) { res.status(404).json({ error: 'Pet not found' }); return; }
 
+      // Ownership check
+      if (pet.ownerId !== req.userId) {
+        res.status(403).json({ error: 'Not authorized' });
+        return;
+      }
+
       const { imageUrl, documentType } = req.body;
       if (!imageUrl || !documentType) {
         res.status(400).json({ error: 'imageUrl and documentType are required' });
+        return;
+      }
+
+      // SSRF protection
+      const urlCheck = validateImageUrl(imageUrl);
+      if (!urlCheck.valid) {
+        res.status(400).json({ error: urlCheck.error });
         return;
       }
 
@@ -98,6 +134,15 @@ export function diagnosticsRouter(db: PawMatchDb): Router {
   // GET /documents/:petId — document history
   router.get('/documents/:petId', async (req: AuthRequest, res) => {
     try {
+      const pet = db.select().from(pets).where(eq(pets.id, req.params.petId)).get();
+      if (!pet) { res.status(404).json({ error: 'Pet not found' }); return; }
+
+      // Ownership check
+      if (pet.ownerId !== req.userId) {
+        res.status(403).json({ error: 'Not authorized' });
+        return;
+      }
+
       const results = db.select().from(petDocuments)
         .where(eq(petDocuments.petId, req.params.petId))
         .orderBy(desc(petDocuments.createdAt))

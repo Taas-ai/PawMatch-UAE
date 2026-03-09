@@ -7,6 +7,7 @@ import { breedDetectFlow } from '../flows/breed-detect';
 import { translateFlow } from '../flows/translate';
 import { profileReviewFlow } from '../flows/profile-review';
 import { vetAdvisorFlow } from '../flows/vet-advisor';
+import { validateImageUrl } from '../utils/validate-url';
 
 export function aiToolsRouter(db: PawMatchDb): Router {
   const router = Router();
@@ -15,10 +16,20 @@ export function aiToolsRouter(db: PawMatchDb): Router {
   // POST /breed-detect
   router.post('/breed-detect', async (req: AuthRequest, res) => {
     try {
+      // SSRF protection for imageUrl if present
+      if (req.body.imageUrl) {
+        const urlCheck = validateImageUrl(req.body.imageUrl);
+        if (!urlCheck.valid) {
+          res.status(400).json({ error: urlCheck.error });
+          return;
+        }
+      }
+
       const result = await breedDetectFlow(req.body);
       res.json(result);
     } catch (err: any) {
-      res.status(500).json({ error: err.message || 'Breed detection failed' });
+      console.error('Breed detection error:', err);
+      res.status(500).json({ error: 'Breed detection failed' });
     }
   });
 
@@ -28,7 +39,8 @@ export function aiToolsRouter(db: PawMatchDb): Router {
       const result = await translateFlow(req.body);
       res.json(result);
     } catch (err: any) {
-      res.status(500).json({ error: err.message || 'Translation failed' });
+      console.error('Translation error:', err);
+      res.status(500).json({ error: 'Translation failed' });
     }
   });
 
@@ -38,6 +50,12 @@ export function aiToolsRouter(db: PawMatchDb): Router {
       const pet = db.select().from(pets).where(eq(pets.id, req.params.petId)).get();
       if (!pet) {
         res.status(404).json({ error: 'Pet not found' });
+        return;
+      }
+
+      // Ownership check
+      if (pet.ownerId !== req.userId) {
+        res.status(403).json({ error: 'Not authorized' });
         return;
       }
 
@@ -66,7 +84,8 @@ export function aiToolsRouter(db: PawMatchDb): Router {
       });
       res.json(result);
     } catch (err: any) {
-      res.status(500).json({ error: err.message || 'Profile review failed' });
+      console.error('Profile review error:', err);
+      res.status(500).json({ error: 'Profile review failed' });
     }
   });
 
@@ -76,6 +95,12 @@ export function aiToolsRouter(db: PawMatchDb): Router {
       const pet = db.select().from(pets).where(eq(pets.id, req.params.petId)).get();
       if (!pet) {
         res.status(404).json({ error: 'Pet not found' });
+        return;
+      }
+
+      // Ownership check
+      if (pet.ownerId !== req.userId) {
+        res.status(403).json({ error: 'Not authorized' });
         return;
       }
 
@@ -103,7 +128,8 @@ export function aiToolsRouter(db: PawMatchDb): Router {
 
       res.json({ id, ...result });
     } catch (err: any) {
-      res.status(500).json({ error: err.message || 'Vet advisor failed' });
+      console.error('Vet advisor error:', err);
+      res.status(500).json({ error: 'Vet advisor failed' });
     }
   });
 

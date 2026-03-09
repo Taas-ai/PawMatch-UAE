@@ -1,7 +1,12 @@
 import { Request, Response, NextFunction } from 'express';
 import jwt from 'jsonwebtoken';
 
-const JWT_SECRET = process.env.JWT_SECRET || 'pawmatch-dev-secret-change-in-production';
+const JWT_SECRET = process.env.JWT_SECRET || (() => {
+  if (process.env.NODE_ENV === 'production') {
+    throw new Error('JWT_SECRET environment variable is required in production');
+  }
+  return 'pawmatch-dev-secret-DO-NOT-USE-IN-PRODUCTION';
+})();
 
 export interface AuthRequest extends Request {
   userId?: string;

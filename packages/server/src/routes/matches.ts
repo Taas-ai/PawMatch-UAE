@@ -26,6 +26,12 @@ export function matchesRouter(db: PawMatchDb): Router {
         return;
       }
 
+      // Ownership check: requesting user must own at least one pet
+      if (petA.ownerId !== req.userId && petB.ownerId !== req.userId) {
+        res.status(403).json({ error: 'Not authorized' });
+        return;
+      }
+
       // Build pet profiles for the AI flow
       const profileA = {
         name: petA.name,
@@ -78,7 +84,8 @@ export function matchesRouter(db: PawMatchDb): Router {
       const match = db.select().from(matches).where(eq(matches.id, id)).get();
       res.status(201).json(match);
     } catch (err: any) {
-      res.status(500).json({ error: err.message || 'Match analysis failed' });
+      console.error('Match analysis error:', err);
+      res.status(500).json({ error: 'Match analysis failed' });
     }
   });
 
@@ -107,6 +114,15 @@ export function matchesRouter(db: PawMatchDb): Router {
       res.status(404).json({ error: 'Match not found' });
       return;
     }
+
+    // Ownership check
+    const petA = db.select().from(pets).where(eq(pets.id, match.petAId)).get();
+    const petB = db.select().from(pets).where(eq(pets.id, match.petBId)).get();
+    if (petA?.ownerId !== req.userId && petB?.ownerId !== req.userId) {
+      res.status(403).json({ error: 'Not authorized' });
+      return;
+    }
+
     res.json(match);
   });
 
@@ -121,6 +137,14 @@ export function matchesRouter(db: PawMatchDb): Router {
     const match = db.select().from(matches).where(eq(matches.id, req.params.id)).get();
     if (!match) {
       res.status(404).json({ error: 'Match not found' });
+      return;
+    }
+
+    // Ownership check
+    const petA = db.select().from(pets).where(eq(pets.id, match.petAId)).get();
+    const petB = db.select().from(pets).where(eq(pets.id, match.petBId)).get();
+    if (petA?.ownerId !== req.userId && petB?.ownerId !== req.userId) {
+      res.status(403).json({ error: 'Not authorized' });
       return;
     }
 
