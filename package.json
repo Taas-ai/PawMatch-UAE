@@ -4,14 +4,20 @@
   "private": true,
   "workspaces": ["packages/*"],
   "scripts": {
-    "dev": "npm run dev --workspace=packages/server & npm run dev --workspace=packages/web",
+    "dev": "concurrently -n server,web -c blue,green \"npm run dev --workspace=packages/server\" \"npm run dev --workspace=packages/web\"",
+    "dev:server": "npm run dev --workspace=packages/server",
+    "dev:web": "npm run dev --workspace=packages/web",
     "build": "npm run build --workspaces",
     "test": "vitest run",
+    "test:watch": "vitest",
     "db:generate": "npm run generate --workspace=packages/db",
     "db:migrate": "npm run migrate --workspace=packages/db",
-    "db:seed": "npm run seed --workspace=packages/db"
+    "db:seed": "npm run seed --workspace=packages/db",
+    "mcp": "npm run mcp --workspace=packages/server",
+    "genkit:dev": "npm run genkit:dev --workspace=packages/server"
   },
   "devDependencies": {
+    "concurrently": "^9.1.0",
     "vitest": "^3.1.0",
     "typescript": "^5.9.3"
   }

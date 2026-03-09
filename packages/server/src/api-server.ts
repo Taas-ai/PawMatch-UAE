@@ -20,9 +20,9 @@ export function createApp(dbPath: string = './pawmatch.db') {
   app.use('/api/pets', petsRouter(db));
   app.use('/api/matches', matchesRouter(db));
   app.use('/api/messages', messagesRouter(db));
+  app.use('/api/resources', resourcesRouter());
   app.use('/api', aiToolsRouter(db));
   app.use('/api/contracts', contractsRouter(db));
-  app.use('/api/resources', resourcesRouter());
 
   return app;
 }
