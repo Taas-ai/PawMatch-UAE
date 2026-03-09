@@ -4,3 +4,7 @@ dist/
 firebase-debug.log
 *.log
 *.db
+
+# Capacitor native projects
+packages/web/ios/
+packages/web/android/
