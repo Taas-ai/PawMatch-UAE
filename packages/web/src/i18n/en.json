@@ -1,0 +1,52 @@
+{
+  "nav": {
+    "dashboard": "Dashboard",
+    "pets": "Pets",
+    "matches": "Matches",
+    "messages": "Messages",
+    "tools": "Tools",
+    "breedDetect": "Breed Detection",
+    "translate": "Translate",
+    "vetAdvisor": "Vet Advisor",
+    "login": "Login",
+    "register": "Register",
+    "logout": "Logout",
+    "profile": "Profile"
+  },
+  "landing": {
+    "hero": "Find the Perfect Match for Your Pet",
+    "subtitle": "UAE's first AI-powered pet breeding platform",
+    "getStarted": "Get Started",
+    "aiMatching": "AI Matching",
+    "breedDetection": "Breed Detection",
+    "vetAdvisory": "Vet Advisory"
+  },
+  "common": {
+    "loading": "Loading...",
+    "save": "Save",
+    "cancel": "Cancel",
+    "submit": "Submit",
+    "back": "Back",
+    "next": "Next",
+    "search": "Search",
+    "filter": "Filter",
+    "noResults": "No results found",
+    "error": "Something went wrong"
+  },
+  "pets": {
+    "addPet": "Add Pet",
+    "myPets": "My Pets",
+    "allPets": "All Pets",
+    "noPets": "No pets yet. Add your first pet!",
+    "findMatch": "Find a Match"
+  },
+  "matches": {
+    "pending": "Pending",
+    "accepted": "Accepted",
+    "rejected": "Rejected",
+    "completed": "Completed",
+    "accept": "Accept",
+    "reject": "Reject",
+    "analyze": "Analyze Compatibility"
+  }
+}

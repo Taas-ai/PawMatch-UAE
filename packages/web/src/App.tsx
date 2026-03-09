@@ -15,6 +15,10 @@ import { MatchCreate } from '@/pages/MatchCreate';
 import { BreedDetect } from '@/pages/BreedDetect';
 import { Translate } from '@/pages/Translate';
 import { VetAdvisor } from '@/pages/VetAdvisor';
+import { Messages } from '@/pages/Messages';
+import { ChatThread } from '@/pages/ChatThread';
+import { Profile } from '@/pages/Profile';
+import { Verification } from '@/pages/Verification';
 
 export default function App() {
   return (
@@ -39,6 +43,10 @@ export default function App() {
         <Route path="/matches" element={<ProtectedRoute><MatchesList /></ProtectedRoute>} />
         <Route path="/matches/new" element={<ProtectedRoute><MatchCreate /></ProtectedRoute>} />
         <Route path="/matches/:id" element={<ProtectedRoute><MatchDetail /></ProtectedRoute>} />
+        <Route path="/messages" element={<ProtectedRoute><Messages /></ProtectedRoute>} />
+        <Route path="/messages/:matchId" element={<ProtectedRoute><ChatThread /></ProtectedRoute>} />
+        <Route path="/profile" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
+        <Route path="/profile/verification" element={<ProtectedRoute><Verification /></ProtectedRoute>} />
         <Route path="/tools/breed-detect" element={<ProtectedRoute><BreedDetect /></ProtectedRoute>} />
         <Route path="/tools/translate" element={<ProtectedRoute><Translate /></ProtectedRoute>} />
         <Route path="/tools/vet-advisor" element={<ProtectedRoute><VetAdvisor /></ProtectedRoute>} />

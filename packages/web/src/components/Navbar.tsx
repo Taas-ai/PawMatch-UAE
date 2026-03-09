@@ -1,14 +1,25 @@
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { Menu, X, PawPrint, LogOut, User, ChevronDown } from 'lucide-react';
+import { Menu, X, PawPrint, LogOut, User, ChevronDown, Globe } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 import { useAuth } from '@/lib/auth-context';
 import { cn } from '@/lib/utils';
 
 export function Navbar() {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
+  const { i18n } = useTranslation();
   const [mobileOpen, setMobileOpen] = useState(false);
   const [toolsOpen, setToolsOpen] = useState(false);
+
+  const isArabic = i18n.language === 'ar';
+
+  const toggleLanguage = () => {
+    const newLang = isArabic ? 'en' : 'ar';
+    i18n.changeLanguage(newLang);
+    localStorage.setItem('pawmatch_lang', newLang);
+    document.documentElement.dir = newLang === 'ar' ? 'rtl' : 'ltr';
+  };
 
   const handleLogout = () => {
     logout();
@@ -61,10 +72,23 @@ export function Navbar() {
 
                 {/* User Menu */}
                 <div className="flex items-center gap-3 ml-4 pl-4 border-l border-gray-200">
-                  <div className="flex items-center gap-2 text-sm text-gray-600">
+                  {/* Language Toggle */}
+                  <button
+                    onClick={toggleLanguage}
+                    className="flex items-center gap-1 px-2 py-1 text-xs font-medium text-gray-500 hover:text-amber-600 hover:bg-amber-50 rounded-md transition-colors border border-gray-200"
+                    title="Toggle language"
+                  >
+                    <Globe className="h-3.5 w-3.5" />
+                    {isArabic ? 'EN' : 'AR'}
+                  </button>
+
+                  <Link
+                    to="/profile"
+                    className="flex items-center gap-2 text-sm text-gray-600 hover:text-amber-600 transition-colors"
+                  >
                     <User className="h-4 w-4" />
                     <span>{user.name}</span>
-                  </div>
+                  </Link>
                   <button
                     onClick={handleLogout}
                     className="flex items-center gap-1 px-3 py-2 text-sm font-medium text-gray-500 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
@@ -76,6 +100,15 @@ export function Navbar() {
               </>
             ) : (
               <div className="flex items-center gap-2">
+                {/* Language Toggle (guest) */}
+                <button
+                  onClick={toggleLanguage}
+                  className="flex items-center gap-1 px-2 py-1 text-xs font-medium text-gray-500 hover:text-amber-600 hover:bg-amber-50 rounded-md transition-colors border border-gray-200"
+                  title="Toggle language"
+                >
+                  <Globe className="h-3.5 w-3.5" />
+                  {isArabic ? 'EN' : 'AR'}
+                </button>
                 <Link
                   to="/login"
                   className="px-4 py-2 text-sm font-medium text-gray-600 hover:text-amber-600 hover:bg-amber-50 rounded-lg transition-colors"
@@ -121,10 +154,22 @@ export function Navbar() {
                   <MobileLink to="/tools/vet-advisor" onClick={() => setMobileOpen(false)}>Vet Advisor</MobileLink>
                 </div>
                 <div className="pt-2 mt-2 border-t border-gray-100">
-                  <div className="flex items-center gap-2 px-3 py-2 text-sm text-gray-600">
+                  {/* Language Toggle (mobile) */}
+                  <button
+                    onClick={toggleLanguage}
+                    className="flex items-center gap-2 w-full px-3 py-2 text-sm text-gray-600 hover:bg-amber-50 rounded-lg transition-colors"
+                  >
+                    <Globe className="h-4 w-4" />
+                    {isArabic ? 'Switch to English' : 'التبديل إلى العربية'}
+                  </button>
+                  <Link
+                    to="/profile"
+                    onClick={() => setMobileOpen(false)}
+                    className="flex items-center gap-2 px-3 py-2 text-sm text-gray-600 hover:bg-amber-50 rounded-lg transition-colors"
+                  >
                     <User className="h-4 w-4" />
                     <span>{user.name}</span>
-                  </div>
+                  </Link>
                   <button
                     onClick={() => { handleLogout(); setMobileOpen(false); }}
                     className="flex items-center gap-2 w-full px-3 py-2 text-sm text-red-600 hover:bg-red-50 rounded-lg transition-colors"
@@ -136,6 +181,13 @@ export function Navbar() {
               </>
             ) : (
               <>
+                <button
+                  onClick={toggleLanguage}
+                  className="flex items-center gap-2 w-full px-3 py-2 text-sm text-gray-600 hover:bg-amber-50 rounded-lg transition-colors"
+                >
+                  <Globe className="h-4 w-4" />
+                  {isArabic ? 'Switch to English' : 'التبديل إلى العربية'}
+                </button>
                 <MobileLink to="/login" onClick={() => setMobileOpen(false)}>Login</MobileLink>
                 <MobileLink to="/register" onClick={() => setMobileOpen(false)}>Register</MobileLink>
               </>
