@@ -135,6 +135,13 @@ export function Landing() {
               <PawPrint className="h-6 w-6 text-amber-500" />
               PawMatch UAE
             </div>
+            <div className="flex items-center gap-6">
+              <Link to="/terms" className="text-amber-200 hover:text-white text-sm transition-colors">Terms of Service</Link>
+              <Link to="/privacy" className="text-amber-200 hover:text-white text-sm transition-colors">Privacy Policy</Link>
+              <a href="mailto:contact@pawmatch.ae" className="text-amber-200 hover:text-white text-sm transition-colors">contact@pawmatch.ae</a>
+            </div>
+          </div>
+          <div className="mt-6 text-center sm:text-left">
             <p className="text-sm">&copy; {new Date().getFullYear()} PawMatch UAE. All rights reserved.</p>
           </div>
         </div>

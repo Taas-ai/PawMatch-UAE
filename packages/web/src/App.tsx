@@ -24,6 +24,8 @@ const VetAdvisor = lazy(() => import('./pages/VetAdvisor').then(m => ({ default:
 const Diagnostic = lazy(() => import('./pages/Diagnostic'));
 const DocumentScan = lazy(() => import('./pages/DocumentScan'));
 const MatchCreate = lazy(() => import('./pages/MatchCreate').then(m => ({ default: m.MatchCreate })));
+import Terms from './pages/Terms';
+import Privacy from './pages/Privacy';
 
 export default function App() {
   return (
@@ -34,6 +36,8 @@ export default function App() {
           <Route path="/" element={<Landing />} />
           <Route path="/login" element={<Login />} />
           <Route path="/register" element={<Register />} />
+          <Route path="/terms" element={<Terms />} />
+          <Route path="/privacy" element={<Privacy />} />
           <Route
             path="/dashboard"
             element={

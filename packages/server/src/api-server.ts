@@ -1,4 +1,5 @@
 import express from 'express';
+import helmet from 'helmet';
 import cors from 'cors';
 import rateLimit from 'express-rate-limit';
 import { createDb } from '@pawmatch/db';
@@ -15,6 +16,8 @@ import { diagnosticsRouter } from './routes/diagnostics';
 export function createApp(dbPath: string = './pawmatch.db') {
   const db = createDb(dbPath);
   const app = express();
+
+  app.use(helmet());
 
   const allowedOrigins = process.env.ALLOWED_ORIGINS?.split(',') || [
     'http://localhost:5173',
