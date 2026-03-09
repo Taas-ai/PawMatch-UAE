@@ -91,6 +91,30 @@ function createTestDb() {
       general_advice TEXT,
       created_at TEXT NOT NULL DEFAULT (datetime('now'))
     );
+    CREATE TABLE pet_diagnostics (
+      id TEXT PRIMARY KEY,
+      pet_id TEXT NOT NULL REFERENCES pets(id),
+      requested_by TEXT NOT NULL REFERENCES users(id),
+      image_url TEXT,
+      symptoms TEXT,
+      assessment TEXT,
+      possible_conditions TEXT NOT NULL DEFAULT '[]',
+      recommended_actions TEXT NOT NULL DEFAULT '[]',
+      urgency_level TEXT,
+      disclaimer TEXT,
+      created_at TEXT NOT NULL DEFAULT (datetime('now'))
+    );
+    CREATE TABLE pet_documents (
+      id TEXT PRIMARY KEY,
+      pet_id TEXT NOT NULL REFERENCES pets(id),
+      uploaded_by TEXT NOT NULL REFERENCES users(id),
+      image_url TEXT,
+      document_type TEXT NOT NULL,
+      extracted_data TEXT NOT NULL DEFAULT '{}',
+      raw_text TEXT,
+      processed_at TEXT,
+      created_at TEXT NOT NULL DEFAULT (datetime('now'))
+    );
   `);
   return db;
 }
@@ -129,13 +153,13 @@ describe('Database Schema', () => {
     db = createTestDb();
   });
 
-  it('creates all 6 tables', () => {
+  it('creates all 8 tables', () => {
     const tables = db.all<{ name: string }>(
       "SELECT name FROM sqlite_master WHERE type='table' AND name NOT LIKE 'sqlite_%'"
     ) as any[];
     const names = tables.map((t: any) => t.name).sort();
     expect(names).toEqual([
-      'breeding_contracts', 'matches', 'messages', 'pets', 'users', 'vet_consultations'
+      'breeding_contracts', 'matches', 'messages', 'pet_diagnostics', 'pet_documents', 'pets', 'users', 'vet_consultations'
     ]);
   });
 

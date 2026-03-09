@@ -88,3 +88,29 @@ export const vetConsultations = sqliteTable('vet_consultations', {
   generalAdvice: text('general_advice'),
   createdAt: text('created_at').notNull().default(sql`(datetime('now'))`),
 });
+
+export const petDiagnostics = sqliteTable('pet_diagnostics', {
+  id: text('id').primaryKey(),
+  petId: text('pet_id').notNull().references(() => pets.id),
+  requestedBy: text('requested_by').notNull().references(() => users.id),
+  imageUrl: text('image_url'),
+  symptoms: text('symptoms'),
+  assessment: text('assessment'),
+  possibleConditions: text('possible_conditions').notNull().default('[]'),
+  recommendedActions: text('recommended_actions').notNull().default('[]'),
+  urgencyLevel: text('urgency_level', { enum: ['routine', 'soon', 'urgent', 'emergency'] }),
+  disclaimer: text('disclaimer'),
+  createdAt: text('created_at').notNull().default(sql`(datetime('now'))`),
+});
+
+export const petDocuments = sqliteTable('pet_documents', {
+  id: text('id').primaryKey(),
+  petId: text('pet_id').notNull().references(() => pets.id),
+  uploadedBy: text('uploaded_by').notNull().references(() => users.id),
+  imageUrl: text('image_url'),
+  documentType: text('document_type', { enum: ['lab_report', 'prescription', 'vaccination'] }).notNull(),
+  extractedData: text('extracted_data').notNull().default('{}'),
+  rawText: text('raw_text'),
+  processedAt: text('processed_at'),
+  createdAt: text('created_at').notNull().default(sql`(datetime('now'))`),
+});

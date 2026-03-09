@@ -97,3 +97,33 @@ CREATE TABLE `vet_consultations` (
 	FOREIGN KEY (`pet_id`) REFERENCES `pets`(`id`) ON UPDATE no action ON DELETE no action,
 	FOREIGN KEY (`requested_by`) REFERENCES `users`(`id`) ON UPDATE no action ON DELETE no action
 );
+--> statement-breakpoint
+CREATE TABLE `pet_diagnostics` (
+	`id` text PRIMARY KEY NOT NULL,
+	`pet_id` text NOT NULL,
+	`requested_by` text NOT NULL,
+	`image_url` text,
+	`symptoms` text,
+	`assessment` text,
+	`possible_conditions` text DEFAULT '[]' NOT NULL,
+	`recommended_actions` text DEFAULT '[]' NOT NULL,
+	`urgency_level` text,
+	`disclaimer` text,
+	`created_at` text DEFAULT (datetime('now')) NOT NULL,
+	FOREIGN KEY (`pet_id`) REFERENCES `pets`(`id`) ON UPDATE no action ON DELETE no action,
+	FOREIGN KEY (`requested_by`) REFERENCES `users`(`id`) ON UPDATE no action ON DELETE no action
+);
+--> statement-breakpoint
+CREATE TABLE `pet_documents` (
+	`id` text PRIMARY KEY NOT NULL,
+	`pet_id` text NOT NULL,
+	`uploaded_by` text NOT NULL,
+	`image_url` text,
+	`document_type` text NOT NULL,
+	`extracted_data` text DEFAULT '{}' NOT NULL,
+	`raw_text` text,
+	`processed_at` text,
+	`created_at` text DEFAULT (datetime('now')) NOT NULL,
+	FOREIGN KEY (`pet_id`) REFERENCES `pets`(`id`) ON UPDATE no action ON DELETE no action,
+	FOREIGN KEY (`uploaded_by`) REFERENCES `users`(`id`) ON UPDATE no action ON DELETE no action
+);

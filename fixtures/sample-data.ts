@@ -81,6 +81,37 @@ export const mockGeminiBreedDetectResponse = {
   averagePrice: '4000-10000 AED',
 };
 
+export const mockGeminiDiagnosticResponse = {
+  assessment: 'The image shows a localized area of redness and mild swelling on the left ear. This is consistent with an ear infection or allergic reaction.',
+  possibleConditions: [
+    { condition: 'Otitis externa (ear infection)', likelihood: 'high' as const, severity: 'moderate' as const, description: 'Common in dogs, especially in hot and humid climates like the UAE.' },
+    { condition: 'Allergic dermatitis', likelihood: 'moderate' as const, severity: 'mild' as const, description: 'Could be triggered by environmental allergens or food.' },
+  ],
+  recommendedActions: [
+    'Schedule a vet appointment within 2-3 days',
+    'Keep the ear clean and dry',
+    'Do not insert anything into the ear canal',
+    'Monitor for worsening symptoms or discharge',
+  ],
+  urgencyLevel: 'soon' as const,
+  shouldSeeVet: true,
+  disclaimer: 'This is an AI-assisted preliminary assessment and NOT a veterinary diagnosis. Please consult a licensed UAE veterinarian for proper examination and treatment.',
+};
+
+export const mockGeminiDocumentOCRResponse = {
+  documentType: 'lab_report' as const,
+  clinicName: 'Modern Vet - Jumeirah',
+  date: '2026-02-15',
+  veterinarian: 'Dr. Sarah Ahmed',
+  labResults: [
+    { test: 'Complete Blood Count (CBC)', value: '12.5', unit: 'x10^9/L', referenceRange: '5.5-16.9', flag: 'normal' as const },
+    { test: 'ALT (Liver)', value: '85', unit: 'U/L', referenceRange: '10-125', flag: 'normal' as const },
+    { test: 'Creatinine (Kidney)', value: '1.8', unit: 'mg/dL', referenceRange: '0.5-1.8', flag: 'normal' as const },
+  ],
+  notes: 'All values within normal range. Pet is healthy for breeding.',
+  rawText: 'Modern Vet Jumeirah\nLab Report\nDate: 2026-02-15\nPatient: Luna\nSpecies: Canine\n...',
+};
+
 export const mockGeminiVetAdvisorResponse = {
   breedingReadiness: 'ready' as const,
   requiredTests: [
