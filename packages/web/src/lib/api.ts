@@ -1,4 +1,5 @@
-const API_BASE = '/api';
+import { getApiBaseUrl } from './capacitor';
+const API_BASE = getApiBaseUrl() + '/api';
 
 async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
   const token = localStorage.getItem('pawmatch_token');

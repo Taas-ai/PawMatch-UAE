@@ -59,7 +59,7 @@ describe('Social Auth API', () => {
       .post('/api/auth/google')
       .send({});
     expect(res.status).toBe(400);
-    expect(res.body.error).toMatch(/idToken or profile required/);
+    expect(res.body.error).toMatch(/email and sub required/);
   });
 
   // --- Apple ---
@@ -101,7 +101,7 @@ describe('Social Auth API', () => {
       .post('/api/auth/apple')
       .send({});
     expect(res.status).toBe(400);
-    expect(res.body.error).toMatch(/identityToken or profile required/);
+    expect(res.body.error).toMatch(/sub required/);
   });
 
   // --- Cross-cutting ---

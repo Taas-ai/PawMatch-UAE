@@ -1,23 +1,8 @@
 import { vi, describe, it, expect, beforeEach } from 'vitest';
+import { mockGenerate, setupGenkitMock } from '../helpers/mock-genkit';
 
-const { mockGenerate } = vi.hoisted(() => ({
-  mockGenerate: vi.fn(),
-}));
+vi.mock('../../src/genkit', () => setupGenkitMock());
 
-vi.mock('../../src/genkit', async () => {
-  const actual = await vi.importActual<any>('../../src/genkit');
-  return {
-    ...actual,
-    ai: {
-      defineFlow: vi.fn((_config: any, handler: any) => {
-        return async (input: any) => handler(input);
-      }),
-      generate: mockGenerate,
-    },
-  };
-});
-
-// Import AFTER mock is set up (vi.mock is hoisted)
 import { petMatchFlow } from '../../src/flows/pet-match';
 
 const samplePetA = {
