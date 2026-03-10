@@ -14,10 +14,9 @@ export function diagnosticsRouter(db: PawMatchDb): Router {
   // POST /diagnostic/:petId — analyze symptom photo
   router.post('/diagnostic/:petId', async (req: AuthRequest, res) => {
     try {
-      const pet = db.select().from(pets).where(eq(pets.id, req.params.petId)).get();
+      const [pet] = await db.select().from(pets).where(eq(pets.id, req.params.petId));
       if (!pet) { res.status(404).json({ error: 'Pet not found' }); return; }
 
-      // Ownership check
       if (pet.ownerId !== req.userId) {
         res.status(403).json({ error: 'Not authorized' });
         return;
@@ -26,7 +25,6 @@ export function diagnosticsRouter(db: PawMatchDb): Router {
       const { imageUrl, symptoms } = req.body;
       if (!imageUrl) { res.status(400).json({ error: 'imageUrl is required' }); return; }
 
-      // SSRF protection
       const urlCheck = validateImageUrl(imageUrl);
       if (!urlCheck.valid) {
         res.status(400).json({ error: urlCheck.error });
@@ -34,26 +32,23 @@ export function diagnosticsRouter(db: PawMatchDb): Router {
       }
 
       const result = await petDiagnosticFlow({
-        imageUrl,
-        symptoms,
+        imageUrl, symptoms,
         species: pet.species as 'dog' | 'cat',
         breed: pet.breed,
         age: pet.age,
       });
 
       const id = uuid();
-      db.insert(petDiagnostics).values({
-        id,
-        petId: pet.id,
-        requestedBy: req.userId!,
-        imageUrl,
-        symptoms,
+      await db.insert(petDiagnostics).values({
+        id, petId: pet.id, requestedBy: req.userId!,
+        imageUrl, symptoms,
         assessment: result.assessment,
         possibleConditions: JSON.stringify(result.possibleConditions),
         recommendedActions: JSON.stringify(result.recommendedActions),
         urgencyLevel: result.urgencyLevel,
         disclaimer: result.disclaimer,
-      }).run();
+        createdAt: new Date().toISOString(),
+      });
 
       res.status(201).json({ id, ...result });
     } catch (err) {
@@ -65,19 +60,17 @@ export function diagnosticsRouter(db: PawMatchDb): Router {
   // GET /diagnostic/:petId — diagnostic history
   router.get('/diagnostic/:petId', async (req: AuthRequest, res) => {
     try {
-      const pet = db.select().from(pets).where(eq(pets.id, req.params.petId)).get();
+      const [pet] = await db.select().from(pets).where(eq(pets.id, req.params.petId));
       if (!pet) { res.status(404).json({ error: 'Pet not found' }); return; }
 
-      // Ownership check
       if (pet.ownerId !== req.userId) {
         res.status(403).json({ error: 'Not authorized' });
         return;
       }
 
-      const results = db.select().from(petDiagnostics)
+      const results = await db.select().from(petDiagnostics)
         .where(eq(petDiagnostics.petId, req.params.petId))
-        .orderBy(desc(petDiagnostics.createdAt))
-        .all();
+        .orderBy(desc(petDiagnostics.createdAt));
       res.json(results);
     } catch (err) {
       console.error('Diagnostic history error:', err);
@@ -88,10 +81,9 @@ export function diagnosticsRouter(db: PawMatchDb): Router {
   // POST /documents/:petId/scan — OCR vet document
   router.post('/documents/:petId/scan', async (req: AuthRequest, res) => {
     try {
-      const pet = db.select().from(pets).where(eq(pets.id, req.params.petId)).get();
+      const [pet] = await db.select().from(pets).where(eq(pets.id, req.params.petId));
       if (!pet) { res.status(404).json({ error: 'Pet not found' }); return; }
 
-      // Ownership check
       if (pet.ownerId !== req.userId) {
         res.status(403).json({ error: 'Not authorized' });
         return;
@@ -103,7 +95,6 @@ export function diagnosticsRouter(db: PawMatchDb): Router {
         return;
       }
 
-      // SSRF protection
       const urlCheck = validateImageUrl(imageUrl);
       if (!urlCheck.valid) {
         res.status(400).json({ error: urlCheck.error });
@@ -113,16 +104,14 @@ export function diagnosticsRouter(db: PawMatchDb): Router {
       const result = await vetDocumentOCRFlow({ imageUrl, documentType });
 
       const id = uuid();
-      db.insert(petDocuments).values({
-        id,
-        petId: pet.id,
-        uploadedBy: req.userId!,
-        imageUrl,
-        documentType,
+      await db.insert(petDocuments).values({
+        id, petId: pet.id, uploadedBy: req.userId!,
+        imageUrl, documentType,
         extractedData: JSON.stringify(result),
         rawText: result.rawText,
         processedAt: new Date().toISOString(),
-      }).run();
+        createdAt: new Date().toISOString(),
+      });
 
       res.status(201).json({ id, ...result });
     } catch (err) {
@@ -134,19 +123,17 @@ export function diagnosticsRouter(db: PawMatchDb): Router {
   // GET /documents/:petId — document history
   router.get('/documents/:petId', async (req: AuthRequest, res) => {
     try {
-      const pet = db.select().from(pets).where(eq(pets.id, req.params.petId)).get();
+      const [pet] = await db.select().from(pets).where(eq(pets.id, req.params.petId));
       if (!pet) { res.status(404).json({ error: 'Pet not found' }); return; }
 
-      // Ownership check
       if (pet.ownerId !== req.userId) {
         res.status(403).json({ error: 'Not authorized' });
         return;
       }
 
-      const results = db.select().from(petDocuments)
+      const results = await db.select().from(petDocuments)
         .where(eq(petDocuments.petId, req.params.petId))
-        .orderBy(desc(petDocuments.createdAt))
-        .all();
+        .orderBy(desc(petDocuments.createdAt));
       res.json(results);
     } catch (err) {
       console.error('Document history error:', err);

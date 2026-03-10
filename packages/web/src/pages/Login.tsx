@@ -4,21 +4,37 @@ import { PawPrint, Mail, Lock, AlertCircle } from 'lucide-react';
 import { useAuth } from '@/lib/auth-context';
 
 export function Login() {
-  const { login } = useAuth();
+  const { loginWithEmail, loginWithGoogle, loginWithApple } = useAuth();
   const navigate = useNavigate();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
 
-  const handleGoogleLogin = () => {
-    // TODO: Integrate Google Sign-In SDK (gsi)
-    alert('Google Sign-In coming soon. Please use email/password for now.');
+  const handleGoogleLogin = async () => {
+    setError('');
+    setLoading(true);
+    try {
+      await loginWithGoogle();
+      navigate('/dashboard');
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Google sign-in failed');
+    } finally {
+      setLoading(false);
+    }
   };
 
-  const handleAppleLogin = () => {
-    // TODO: Integrate Apple Sign-In JS
-    alert('Apple Sign-In coming soon. Please use email/password for now.');
+  const handleAppleLogin = async () => {
+    setError('');
+    setLoading(true);
+    try {
+      await loginWithApple();
+      navigate('/dashboard');
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Apple sign-in failed');
+    } finally {
+      setLoading(false);
+    }
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -26,7 +42,7 @@ export function Login() {
     setError('');
     setLoading(true);
     try {
-      await login(email, password);
+      await loginWithEmail(email, password);
       navigate('/dashboard');
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Login failed');

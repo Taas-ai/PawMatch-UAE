@@ -5,11 +5,11 @@ import { pets, matches, messages, PawMatchDb } from '@pawmatch/db';
 import { requireAuth, AuthRequest } from '../middleware/auth';
 
 async function isMatchParticipant(db: PawMatchDb, matchId: string, userId: string): Promise<boolean> {
-  const match = db.select().from(matches).where(eq(matches.id, matchId)).get();
+  const [match] = await db.select().from(matches).where(eq(matches.id, matchId));
   if (!match) return false;
 
-  const petA = db.select().from(pets).where(eq(pets.id, match.petAId)).get();
-  const petB = db.select().from(pets).where(eq(pets.id, match.petBId)).get();
+  const [petA] = await db.select().from(pets).where(eq(pets.id, match.petAId));
+  const [petB] = await db.select().from(pets).where(eq(pets.id, match.petBId));
 
   return (petA?.ownerId === userId) || (petB?.ownerId === userId);
 }
@@ -26,8 +26,7 @@ export function messagesRouter(db: PawMatchDb): Router {
       return;
     }
 
-    const msgs = db.select().from(messages)
-      .where(eq(messages.matchId, req.params.matchId)).all();
+    const msgs = await db.select().from(messages).where(eq(messages.matchId, req.params.matchId));
     res.json(msgs);
   });
 
@@ -38,8 +37,12 @@ export function messagesRouter(db: PawMatchDb): Router {
       res.status(400).json({ error: 'Content is required' });
       return;
     }
+    if (typeof content !== 'string' || content.length > 2000) {
+      res.status(400).json({ error: 'Message must be a string of 2000 characters or fewer' });
+      return;
+    }
 
-    const match = db.select().from(matches).where(eq(matches.id, req.params.matchId)).get();
+    const [match] = await db.select().from(matches).where(eq(matches.id, req.params.matchId));
     if (!match) {
       res.status(404).json({ error: 'Match not found' });
       return;
@@ -50,21 +53,18 @@ export function messagesRouter(db: PawMatchDb): Router {
       return;
     }
 
-    const participant = await isMatchParticipant(db, req.params.matchId, req.userId!);
-    if (!participant) {
+    const [[petA], [petB]] = await Promise.all([
+      db.select({ ownerId: pets.ownerId }).from(pets).where(eq(pets.id, match.petAId)),
+      db.select({ ownerId: pets.ownerId }).from(pets).where(eq(pets.id, match.petBId)),
+    ]);
+    if (petA?.ownerId !== req.userId && petB?.ownerId !== req.userId) {
       res.status(403).json({ error: 'Not a participant in this match' });
       return;
     }
 
     const id = uuid();
-    db.insert(messages).values({
-      id,
-      matchId: req.params.matchId,
-      senderId: req.userId!,
-      content,
-    }).run();
-
-    const msg = db.select().from(messages).where(eq(messages.id, id)).get();
+    await db.insert(messages).values({ id, matchId: req.params.matchId, senderId: req.userId!, content, createdAt: new Date().toISOString() });
+    const [msg] = await db.select().from(messages).where(eq(messages.id, id));
     res.status(201).json(msg);
   });
 

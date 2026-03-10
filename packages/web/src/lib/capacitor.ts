@@ -5,9 +5,10 @@ export const platform = Capacitor.getPlatform(); // 'ios' | 'android' | 'web'
 
 export function getApiBaseUrl(): string {
   if (isNative) {
-    // In native app, API calls go to production server
-    return import.meta.env.VITE_API_URL || 'https://api.pawmatch.ae';
+    // In native app, API rewrites are handled by Firebase Hosting → Functions
+    return import.meta.env.VITE_API_URL || 'https://pawmatch-uae.web.app';
   }
-  // In web, use relative URLs (Vite proxy handles /api)
+  // In web production (Firebase Hosting), /api/* is rewritten to Functions
+  // In development, Vite proxy handles /api
   return '';
 }

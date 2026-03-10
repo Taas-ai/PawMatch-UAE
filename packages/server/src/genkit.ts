@@ -1,7 +1,9 @@
 import { genkit, z } from 'genkit/beta';
 import { googleAI } from '@genkit-ai/google-genai';
 
-// Initialize Genkit with Google AI (Gemini)
+// Initialize Genkit with Google AI (Gemini).
+// TODO Phase 4: swap to @genkit-ai/vertexai with Firebase AI Logic billing
+// once the Vertex AI integration is confirmed with Firebase project credentials.
 export const ai = genkit({
   plugins: [googleAI()],
   model: googleAI.model('gemini-2.5-flash'),

@@ -34,7 +34,8 @@
     "@capacitor/app": "^8.0.1",
     "@capacitor/haptics": "^8.0.1",
     "@capacitor/keyboard": "^8.0.1",
-    "@capacitor/status-bar": "^8.0.1"
+    "@capacitor/status-bar": "^8.0.1",
+    "firebase": "^11.0.0"
   },
   "devDependencies": {
     "@tailwindcss/vite": "^4.1.0",

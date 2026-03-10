@@ -13,7 +13,7 @@ export default function Privacy() {
         <section>
           <h2 className="text-xl font-semibold mt-6 mb-3">2. Data We Collect</h2>
           <ul className="list-disc pl-6 space-y-2">
-            <li><strong>Account data:</strong> Name, email, phone number, emirate, password (hashed)</li>
+            <li><strong>Account data:</strong> Name, email, phone number, emirate (authentication via Firebase Auth — no passwords stored by PawMatch UAE)</li>
             <li><strong>Pet data:</strong> Pet name, species, breed, age, weight, health records, photos</li>
             <li><strong>Usage data:</strong> Match requests, AI analysis results, chat messages</li>
             <li><strong>Diagnostic data:</strong> Pet health photos, vet documents (processed via AI)</li>
@@ -38,7 +38,7 @@ export default function Privacy() {
 
         <section>
           <h2 className="text-xl font-semibold mt-6 mb-3">5. Data Storage & Security</h2>
-          <p>Data is stored securely with encryption at rest. Passwords are hashed using bcrypt. API communications use HTTPS/TLS. We implement rate limiting, CORS restrictions, and SSRF protection.</p>
+          <p>Data is stored securely with encryption at rest. Authentication is handled by Firebase Auth (no passwords stored by PawMatch UAE). API communications use HTTPS/TLS. We implement rate limiting, CORS restrictions, and SSRF protection.</p>
         </section>
 
         <section>

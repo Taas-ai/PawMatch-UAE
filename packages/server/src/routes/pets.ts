@@ -8,60 +8,63 @@ export function petsRouter(db: PawMatchDb): Router {
   const router = Router();
   router.use(requireAuth);
 
-  router.get('/', (req: AuthRequest, res) => {
+  router.get('/', async (req: AuthRequest, res) => {
     const { species, breed, emirate, gender } = req.query;
     const conditions: any[] = [eq(pets.status, 'active')];
-    if (species) conditions.push(eq(pets.species, species as string));
+    if (species) conditions.push(eq(pets.species, species as any));
     if (breed) conditions.push(eq(pets.breed, breed as string));
     if (emirate) conditions.push(eq(pets.location, emirate as string));
-    if (gender) conditions.push(eq(pets.gender, gender as string));
-    const results = db.select().from(pets).where(and(...conditions)).all();
+    if (gender) conditions.push(eq(pets.gender, gender as any));
+    const results = await db.select().from(pets).where(and(...conditions));
     res.json(results);
   });
 
-  router.get('/:id', (req: AuthRequest, res) => {
-    const pet = db.select().from(pets).where(eq(pets.id, req.params.id)).get();
+  router.get('/:id', async (req: AuthRequest, res) => {
+    const [pet] = await db.select().from(pets).where(eq(pets.id, req.params.id));
     if (!pet) { res.status(404).json({ error: 'Pet not found' }); return; }
     res.json(pet);
   });
 
-  router.post('/', (req: AuthRequest, res) => {
+  router.post('/', async (req: AuthRequest, res) => {
     const { name, species: sp, breed, age, gender, weight, location, temperament, pedigree, healthRecords, dnaTestResults, isNeutered, photoUrls } = req.body;
     if (!name || !sp || !breed || age == null || !gender || weight == null || !location) {
       res.status(400).json({ error: 'Missing required fields' }); return;
     }
     const id = uuid();
-    db.insert(pets).values({
+    const now = new Date().toISOString();
+    await db.insert(pets).values({
       id, ownerId: req.userId!, name, species: sp, breed, age, gender, weight, location,
-      temperament, pedigree, isNeutered: isNeutered ?? false,
+      temperament, pedigree, isNeutered: (isNeutered ?? false) ? 1 : 0,
       healthRecords: healthRecords ? JSON.stringify(healthRecords) : '[]',
       dnaTestResults, photoUrls: photoUrls ? JSON.stringify(photoUrls) : '[]',
-    }).run();
-    const pet = db.select().from(pets).where(eq(pets.id, id)).get();
+      createdAt: now, updatedAt: now,
+    });
+    const [pet] = await db.select().from(pets).where(eq(pets.id, id));
     res.status(201).json(pet);
   });
 
-  router.put('/:id', (req: AuthRequest, res) => {
-    const pet = db.select().from(pets).where(eq(pets.id, req.params.id)).get();
+  router.put('/:id', async (req: AuthRequest, res) => {
+    const [pet] = await db.select().from(pets).where(eq(pets.id, req.params.id));
     if (!pet) { res.status(404).json({ error: 'Pet not found' }); return; }
     if (pet.ownerId !== req.userId) { res.status(403).json({ error: 'Not your pet' }); return; }
     const updates: Record<string, any> = {};
-    for (const key of ['name', 'breed', 'age', 'gender', 'weight', 'location', 'temperament', 'pedigree', 'dnaTestResults', 'isNeutered']) {
+    for (const key of ['name', 'breed', 'age', 'gender', 'weight', 'location', 'temperament', 'pedigree', 'dnaTestResults']) {
       if (req.body[key] !== undefined) updates[key] = req.body[key];
     }
+    if (req.body.isNeutered !== undefined) updates.isNeutered = req.body.isNeutered ? 1 : 0;
     if (req.body.healthRecords) updates.healthRecords = JSON.stringify(req.body.healthRecords);
     if (req.body.photoUrls) updates.photoUrls = JSON.stringify(req.body.photoUrls);
     updates.updatedAt = new Date().toISOString();
-    db.update(pets).set(updates).where(eq(pets.id, req.params.id)).run();
-    const updated = db.select().from(pets).where(eq(pets.id, req.params.id)).get();
+    await db.update(pets).set(updates).where(eq(pets.id, req.params.id));
+    const [updated] = await db.select().from(pets).where(eq(pets.id, req.params.id));
     res.json(updated);
   });
 
-  router.delete('/:id', (req: AuthRequest, res) => {
-    const pet = db.select().from(pets).where(eq(pets.id, req.params.id)).get();
+  router.delete('/:id', async (req: AuthRequest, res) => {
+    const [pet] = await db.select().from(pets).where(eq(pets.id, req.params.id));
     if (!pet) { res.status(404).json({ error: 'Pet not found' }); return; }
     if (pet.ownerId !== req.userId) { res.status(403).json({ error: 'Not your pet' }); return; }
-    db.update(pets).set({ status: 'inactive', updatedAt: new Date().toISOString() }).where(eq(pets.id, req.params.id)).run();
+    await db.update(pets).set({ status: 'inactive', updatedAt: new Date().toISOString() }).where(eq(pets.id, req.params.id));
     res.json({ message: 'Pet deactivated' });
   });
 

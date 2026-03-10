@@ -1,49 +1,61 @@
-import { sqliteTable, text, real, integer } from 'drizzle-orm/sqlite-core';
-import { sql } from 'drizzle-orm';
+import { pgTable, pgEnum, varchar, text, real, boolean, timestamp as pgTimestamp } from 'drizzle-orm/pg-core';
 
-export const users = sqliteTable('users', {
-  id: text('id').primaryKey(),
+// Use string mode so timestamps round-trip as ISO strings in both PostgreSQL and SQLite tests
+const timestamp = (name: string) => pgTimestamp(name, { mode: 'string' });
+
+// ─── Enums ────────────────────────────────────────────────────────────────────
+export const roleEnum = pgEnum('role', ['owner', 'breeder', 'vet', 'admin']);
+export const speciesEnum = pgEnum('species', ['dog', 'cat']);
+export const genderEnum = pgEnum('gender', ['male', 'female']);
+export const petStatusEnum = pgEnum('pet_status', ['active', 'inactive', 'suspended']);
+export const matchStatusEnum = pgEnum('match_status', ['pending', 'accepted', 'rejected', 'completed']);
+export const contractStatusEnum = pgEnum('contract_status', ['draft', 'active', 'completed', 'disputed']);
+export const urgencyLevelEnum = pgEnum('urgency_level', ['routine', 'soon', 'urgent', 'emergency']);
+export const documentTypeEnum = pgEnum('document_type', ['lab_report', 'prescription', 'vaccination']);
+
+// ─── Tables ───────────────────────────────────────────────────────────────────
+
+// id = Firebase UID (string, up to 128 chars)
+export const users = pgTable('users', {
+  id: varchar('id', { length: 128 }).primaryKey(),
   email: text('email').notNull().unique(),
-  passwordHash: text('password_hash'),
   name: text('name').notNull(),
-  authProvider: text('auth_provider', { enum: ['email', 'google', 'apple'] }).notNull().default('email'),
-  authProviderId: text('auth_provider_id'),
   phone: text('phone'),
   emirate: text('emirate'),
-  role: text('role', { enum: ['owner', 'breeder', 'vet', 'admin'] }).notNull().default('owner'),
-  kycVerified: integer('kyc_verified', { mode: 'boolean' }).notNull().default(false),
+  role: roleEnum('role').notNull().default('owner'),
+  kycVerified: boolean('kyc_verified').notNull().default(false),
   avatarUrl: text('avatar_url'),
-  createdAt: text('created_at').notNull().default(sql`(datetime('now'))`),
-  updatedAt: text('updated_at').notNull().default(sql`(datetime('now'))`),
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+  updatedAt: timestamp('updated_at').defaultNow().notNull(),
 });
 
-export const pets = sqliteTable('pets', {
+export const pets = pgTable('pets', {
   id: text('id').primaryKey(),
-  ownerId: text('owner_id').notNull().references(() => users.id),
+  ownerId: varchar('owner_id', { length: 128 }).notNull().references(() => users.id),
   name: text('name').notNull(),
-  species: text('species', { enum: ['dog', 'cat'] }).notNull(),
+  species: speciesEnum('species').notNull(),
   breed: text('breed').notNull(),
   age: real('age').notNull(),
-  gender: text('gender', { enum: ['male', 'female'] }).notNull(),
+  gender: genderEnum('gender').notNull(),
   weight: real('weight').notNull(),
   location: text('location').notNull(),
   temperament: text('temperament'),
   pedigree: text('pedigree'),
   healthRecords: text('health_records').notNull().default('[]'),
   dnaTestResults: text('dna_test_results'),
-  isNeutered: integer('is_neutered', { mode: 'boolean' }).notNull().default(false),
+  isNeutered: boolean('is_neutered').notNull().default(false),
   photoUrls: text('photo_urls').notNull().default('[]'),
-  status: text('status', { enum: ['active', 'inactive', 'suspended'] }).notNull().default('active'),
-  createdAt: text('created_at').notNull().default(sql`(datetime('now'))`),
-  updatedAt: text('updated_at').notNull().default(sql`(datetime('now'))`),
+  status: petStatusEnum('status').notNull().default('active'),
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+  updatedAt: timestamp('updated_at').defaultNow().notNull(),
 });
 
-export const matches = sqliteTable('matches', {
+export const matches = pgTable('matches', {
   id: text('id').primaryKey(),
   petAId: text('pet_a_id').notNull().references(() => pets.id),
   petBId: text('pet_b_id').notNull().references(() => pets.id),
-  requestedBy: text('requested_by').notNull().references(() => users.id),
-  status: text('status', { enum: ['pending', 'accepted', 'rejected', 'completed'] }).notNull().default('pending'),
+  requestedBy: varchar('requested_by', { length: 128 }).notNull().references(() => users.id),
+  status: matchStatusEnum('status').notNull().default('pending'),
   compatibilityScore: real('compatibility_score'),
   geneticHealthRisk: text('genetic_health_risk'),
   breedCompatibility: text('breed_compatibility'),
@@ -52,65 +64,65 @@ export const matches = sqliteTable('matches', {
   recommendation: text('recommendation'),
   warnings: text('warnings').notNull().default('[]'),
   breedingTips: text('breeding_tips').notNull().default('[]'),
-  createdAt: text('created_at').notNull().default(sql`(datetime('now'))`),
-  updatedAt: text('updated_at').notNull().default(sql`(datetime('now'))`),
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+  updatedAt: timestamp('updated_at').defaultNow().notNull(),
 });
 
-export const messages = sqliteTable('messages', {
+export const messages = pgTable('messages', {
   id: text('id').primaryKey(),
   matchId: text('match_id').notNull().references(() => matches.id),
-  senderId: text('sender_id').notNull().references(() => users.id),
+  senderId: varchar('sender_id', { length: 128 }).notNull().references(() => users.id),
   content: text('content').notNull(),
-  createdAt: text('created_at').notNull().default(sql`(datetime('now'))`),
+  createdAt: timestamp('created_at').defaultNow().notNull(),
 });
 
-export const breedingContracts = sqliteTable('breeding_contracts', {
+export const breedingContracts = pgTable('breeding_contracts', {
   id: text('id').primaryKey(),
   matchId: text('match_id').notNull().references(() => matches.id),
-  ownerAId: text('owner_a_id').notNull().references(() => users.id),
-  ownerBId: text('owner_b_id').notNull().references(() => users.id),
+  ownerAId: varchar('owner_a_id', { length: 128 }).notNull().references(() => users.id),
+  ownerBId: varchar('owner_b_id', { length: 128 }).notNull().references(() => users.id),
   studFeeAED: real('stud_fee_aed'),
   terms: text('terms'),
-  status: text('status', { enum: ['draft', 'active', 'completed', 'disputed'] }).notNull().default('draft'),
+  status: contractStatusEnum('status').notNull().default('draft'),
   contractText: text('contract_text'),
-  createdAt: text('created_at').notNull().default(sql`(datetime('now'))`),
-  updatedAt: text('updated_at').notNull().default(sql`(datetime('now'))`),
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+  updatedAt: timestamp('updated_at').defaultNow().notNull(),
 });
 
-export const vetConsultations = sqliteTable('vet_consultations', {
+export const vetConsultations = pgTable('vet_consultations', {
   id: text('id').primaryKey(),
   petId: text('pet_id').notNull().references(() => pets.id),
-  requestedBy: text('requested_by').notNull().references(() => users.id),
+  requestedBy: varchar('requested_by', { length: 128 }).notNull().references(() => users.id),
   breedingReadiness: text('breeding_readiness'),
   requiredTests: text('required_tests').notNull().default('[]'),
   breedSpecificRisks: text('breed_specific_risks').notNull().default('[]'),
   uaeClimateConsiderations: text('uae_climate_considerations').notNull().default('[]'),
   generalAdvice: text('general_advice'),
-  createdAt: text('created_at').notNull().default(sql`(datetime('now'))`),
+  createdAt: timestamp('created_at').defaultNow().notNull(),
 });
 
-export const petDiagnostics = sqliteTable('pet_diagnostics', {
+export const petDiagnostics = pgTable('pet_diagnostics', {
   id: text('id').primaryKey(),
   petId: text('pet_id').notNull().references(() => pets.id),
-  requestedBy: text('requested_by').notNull().references(() => users.id),
+  requestedBy: varchar('requested_by', { length: 128 }).notNull().references(() => users.id),
   imageUrl: text('image_url'),
   symptoms: text('symptoms'),
   assessment: text('assessment'),
   possibleConditions: text('possible_conditions').notNull().default('[]'),
   recommendedActions: text('recommended_actions').notNull().default('[]'),
-  urgencyLevel: text('urgency_level', { enum: ['routine', 'soon', 'urgent', 'emergency'] }),
+  urgencyLevel: urgencyLevelEnum('urgency_level'),
   disclaimer: text('disclaimer'),
-  createdAt: text('created_at').notNull().default(sql`(datetime('now'))`),
+  createdAt: timestamp('created_at').defaultNow().notNull(),
 });
 
-export const petDocuments = sqliteTable('pet_documents', {
+export const petDocuments = pgTable('pet_documents', {
   id: text('id').primaryKey(),
   petId: text('pet_id').notNull().references(() => pets.id),
-  uploadedBy: text('uploaded_by').notNull().references(() => users.id),
+  uploadedBy: varchar('uploaded_by', { length: 128 }).notNull().references(() => users.id),
   imageUrl: text('image_url'),
-  documentType: text('document_type', { enum: ['lab_report', 'prescription', 'vaccination'] }).notNull(),
+  documentType: documentTypeEnum('document_type').notNull(),
   extractedData: text('extracted_data').notNull().default('{}'),
   rawText: text('raw_text'),
   processedAt: text('processed_at'),
-  createdAt: text('created_at').notNull().default(sql`(datetime('now'))`),
+  createdAt: timestamp('created_at').defaultNow().notNull(),
 });

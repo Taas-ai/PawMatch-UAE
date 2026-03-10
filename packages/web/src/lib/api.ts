@@ -1,8 +1,10 @@
 import { getApiBaseUrl } from './capacitor';
+import { auth } from './firebase';
+
 const API_BASE = getApiBaseUrl() + '/api';
 
 async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
-  const token = localStorage.getItem('pawmatch_token');
+  const token = await auth.currentUser?.getIdToken();
   const res = await fetch(`${API_BASE}${path}`, {
     ...options,
     headers: {
@@ -20,10 +22,8 @@ async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
 
 export const api = {
   auth: {
-    register: (data: { email: string; password: string; name: string; emirate: string }) =>
-      request<{ token: string; user: Record<string, unknown> }>('/auth/register', { method: 'POST', body: JSON.stringify(data) }),
-    login: (data: { email: string; password: string }) =>
-      request<{ token: string; user: Record<string, unknown> }>('/auth/login', { method: 'POST', body: JSON.stringify(data) }),
+    sync: (data: { email: string; name: string; emirate?: string; phone?: string; role?: string }) =>
+      request<Record<string, unknown>>('/auth/sync', { method: 'POST', body: JSON.stringify(data) }),
     me: () => request<Record<string, unknown>>('/auth/me'),
   },
   pets: {
@@ -57,19 +57,11 @@ export const api = {
     vetAdvisor: (petId: string, data?: Record<string, unknown>) =>
       request<Record<string, unknown>>(`/vet-advisor/${petId}`, { method: 'POST', body: JSON.stringify(data || {}) }),
     analyzePetPhoto: (petId: string, imageUrl: string, symptoms?: string) =>
-      request<Record<string, unknown>>(`/diagnostic/${petId}`, {
-        method: 'POST',
-        body: JSON.stringify({ imageUrl, symptoms }),
-      }),
-    getDiagnosticHistory: (petId: string) =>
-      request<Record<string, unknown>[]>(`/diagnostic/${petId}`),
+      request<Record<string, unknown>>(`/diagnostic/${petId}`, { method: 'POST', body: JSON.stringify({ imageUrl, symptoms }) }),
+    getDiagnosticHistory: (petId: string) => request<Record<string, unknown>[]>(`/diagnostic/${petId}`),
     scanDocument: (petId: string, imageUrl: string, documentType: string) =>
-      request<Record<string, unknown>>(`/documents/${petId}/scan`, {
-        method: 'POST',
-        body: JSON.stringify({ imageUrl, documentType }),
-      }),
-    getDocumentHistory: (petId: string) =>
-      request<Record<string, unknown>[]>(`/documents/${petId}`),
+      request<Record<string, unknown>>(`/documents/${petId}/scan`, { method: 'POST', body: JSON.stringify({ imageUrl, documentType }) }),
+    getDocumentHistory: (petId: string) => request<Record<string, unknown>[]>(`/documents/${petId}`),
   },
   contracts: {
     create: (data: Record<string, unknown>) => request<Record<string, unknown>>('/contracts', { method: 'POST', body: JSON.stringify(data) }),

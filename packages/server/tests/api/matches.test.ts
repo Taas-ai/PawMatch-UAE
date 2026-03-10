@@ -15,44 +15,42 @@ vi.mock('../../src/flows/pet-match', () => ({
 }));
 
 import { createApp } from '../../src/api-server';
+import { createTestDb, makeToken } from '../helpers/test-db';
 
-async function registerAndGetToken(app: any, email = 'owner@test.com') {
-  const res = await request(app).post('/api/auth/register')
-    .send({ email, password: 'Test1234!', name: 'Owner', emirate: 'Dubai' });
-  return res.body.token;
+const OWNER_UID = 'match-owner-001';
+
+async function setupUser(app: any, uid: string, email: string) {
+  await request(app).post('/api/auth/sync')
+    .set('Authorization', `Bearer ${makeToken(uid)}`)
+    .send({ email, name: 'Owner', emirate: 'Dubai' });
 }
 
-async function createPet(app: any, token: string, overrides: Record<string, any> = {}) {
+async function createPet(app: any, uid: string, overrides: Record<string, any> = {}) {
   const defaults = {
-    name: 'Luna',
-    species: 'dog',
-    breed: 'Golden Retriever',
-    age: 3,
-    gender: 'female',
-    weight: 28,
-    location: 'Dubai',
-    isNeutered: false,
+    name: 'Luna', species: 'dog', breed: 'Golden Retriever',
+    age: 3, gender: 'female', weight: 28, location: 'Dubai', isNeutered: false,
   };
-  const res = await request(app).post('/api/pets').set('Authorization', `Bearer ${token}`)
+  const res = await request(app).post('/api/pets')
+    .set('Authorization', `Bearer ${makeToken(uid)}`)
     .send({ ...defaults, ...overrides });
   return res.body;
 }
 
 describe('Matches API', () => {
   let app: any;
-  let token: string;
 
   beforeEach(async () => {
-    app = createApp(':memory:');
-    token = await registerAndGetToken(app);
+    const db = createTestDb();
+    app = createApp(db);
+    await setupUser(app, OWNER_UID, 'owner@test.com');
   });
 
   it('POST /api/matches/analyze creates a match', async () => {
-    const petA = await createPet(app, token, { name: 'Rex', gender: 'male', breed: 'GR' });
-    const petB = await createPet(app, token, { name: 'Luna', gender: 'female', breed: 'GR' });
+    const petA = await createPet(app, OWNER_UID, { name: 'Rex', gender: 'male', breed: 'GR' });
+    const petB = await createPet(app, OWNER_UID, { name: 'Luna', gender: 'female', breed: 'GR' });
 
     const res = await request(app).post('/api/matches/analyze')
-      .set('Authorization', `Bearer ${token}`)
+      .set('Authorization', `Bearer ${makeToken(OWNER_UID)}`)
       .send({ petAId: petA.id, petBId: petB.id });
 
     expect(res.status).toBe(201);
@@ -64,15 +62,15 @@ describe('Matches API', () => {
   });
 
   it('GET /api/matches lists user matches', async () => {
-    const petA = await createPet(app, token, { name: 'Rex', gender: 'male' });
-    const petB = await createPet(app, token, { name: 'Luna', gender: 'female' });
+    const petA = await createPet(app, OWNER_UID, { name: 'Rex', gender: 'male' });
+    const petB = await createPet(app, OWNER_UID, { name: 'Luna', gender: 'female' });
 
     await request(app).post('/api/matches/analyze')
-      .set('Authorization', `Bearer ${token}`)
+      .set('Authorization', `Bearer ${makeToken(OWNER_UID)}`)
       .send({ petAId: petA.id, petBId: petB.id });
 
     const res = await request(app).get('/api/matches')
-      .set('Authorization', `Bearer ${token}`);
+      .set('Authorization', `Bearer ${makeToken(OWNER_UID)}`);
 
     expect(res.status).toBe(200);
     expect(res.body.length).toBe(1);
@@ -80,15 +78,15 @@ describe('Matches API', () => {
   });
 
   it('PUT /api/matches/:id/respond accepts a match', async () => {
-    const petA = await createPet(app, token, { name: 'Rex', gender: 'male' });
-    const petB = await createPet(app, token, { name: 'Luna', gender: 'female' });
+    const petA = await createPet(app, OWNER_UID, { name: 'Rex', gender: 'male' });
+    const petB = await createPet(app, OWNER_UID, { name: 'Luna', gender: 'female' });
 
     const create = await request(app).post('/api/matches/analyze')
-      .set('Authorization', `Bearer ${token}`)
+      .set('Authorization', `Bearer ${makeToken(OWNER_UID)}`)
       .send({ petAId: petA.id, petBId: petB.id });
 
     const res = await request(app).put(`/api/matches/${create.body.id}/respond`)
-      .set('Authorization', `Bearer ${token}`)
+      .set('Authorization', `Bearer ${makeToken(OWNER_UID)}`)
       .send({ status: 'accepted' });
 
     expect(res.status).toBe(200);
@@ -97,30 +95,28 @@ describe('Matches API', () => {
 
   it('POST /api/matches/analyze returns 400 without pet IDs', async () => {
     const res = await request(app).post('/api/matches/analyze')
-      .set('Authorization', `Bearer ${token}`)
+      .set('Authorization', `Bearer ${makeToken(OWNER_UID)}`)
       .send({});
-
     expect(res.status).toBe(400);
   });
 
   it('POST /api/matches/analyze returns 404 for missing pets', async () => {
     const res = await request(app).post('/api/matches/analyze')
-      .set('Authorization', `Bearer ${token}`)
+      .set('Authorization', `Bearer ${makeToken(OWNER_UID)}`)
       .send({ petAId: 'nonexistent', petBId: 'also-nonexistent' });
-
     expect(res.status).toBe(404);
   });
 
   it('PUT /api/matches/:id/respond rejects invalid status', async () => {
-    const petA = await createPet(app, token, { name: 'Rex', gender: 'male' });
-    const petB = await createPet(app, token, { name: 'Luna', gender: 'female' });
+    const petA = await createPet(app, OWNER_UID, { name: 'Rex', gender: 'male' });
+    const petB = await createPet(app, OWNER_UID, { name: 'Luna', gender: 'female' });
 
     const create = await request(app).post('/api/matches/analyze')
-      .set('Authorization', `Bearer ${token}`)
+      .set('Authorization', `Bearer ${makeToken(OWNER_UID)}`)
       .send({ petAId: petA.id, petBId: petB.id });
 
     const res = await request(app).put(`/api/matches/${create.body.id}/respond`)
-      .set('Authorization', `Bearer ${token}`)
+      .set('Authorization', `Bearer ${makeToken(OWNER_UID)}`)
       .send({ status: 'invalid' });
 
     expect(res.status).toBe(400);

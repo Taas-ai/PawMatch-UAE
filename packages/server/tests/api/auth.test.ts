@@ -1,59 +1,77 @@
 import { describe, it, expect, beforeEach } from 'vitest';
 import request from 'supertest';
 import { createApp } from '../../src/api-server';
+import { createTestDb, makeToken } from '../helpers/test-db';
 
 describe('Auth API', () => {
   let app: any;
+  let db: ReturnType<typeof createTestDb>;
 
   beforeEach(() => {
-    app = createApp(':memory:');
+    db = createTestDb();
+    app = createApp(db);
   });
 
-  it('POST /api/auth/register creates a user', async () => {
+  it('POST /api/auth/sync creates a new user', async () => {
+    const uid = 'firebase-uid-001';
     const res = await request(app)
-      .post('/api/auth/register')
-      .send({ email: 'test@example.com', password: 'Test1234!', name: 'Test User', emirate: 'Dubai' });
+      .post('/api/auth/sync')
+      .set('Authorization', `Bearer ${makeToken(uid)}`)
+      .send({ email: 'test@example.com', name: 'Test User', emirate: 'Dubai' });
     expect(res.status).toBe(201);
-    expect(res.body.token).toBeDefined();
-    expect(res.body.user.email).toBe('test@example.com');
-    expect(res.body.user.passwordHash).toBeUndefined();
+    expect(res.body.id).toBe(uid);
+    expect(res.body.email).toBe('test@example.com');
   });
 
-  it('POST /api/auth/register rejects duplicate email', async () => {
-    const payload = { email: 'dup@example.com', password: 'Test1234!', name: 'Dup', emirate: 'Dubai' };
-    await request(app).post('/api/auth/register').send(payload);
-    const res = await request(app).post('/api/auth/register').send(payload);
-    expect(res.status).toBe(409);
-  });
+  it('POST /api/auth/sync updates an existing user', async () => {
+    const uid = 'firebase-uid-002';
+    const token = makeToken(uid);
 
-  it('POST /api/auth/login returns token', async () => {
-    await request(app).post('/api/auth/register')
-      .send({ email: 'login@example.com', password: 'Test1234!', name: 'Login', emirate: 'Dubai' });
-    const res = await request(app).post('/api/auth/login')
-      .send({ email: 'login@example.com', password: 'Test1234!' });
+    // Create user first
+    await request(app).post('/api/auth/sync')
+      .set('Authorization', `Bearer ${token}`)
+      .send({ email: 'update@example.com', name: 'Original Name' });
+
+    // Update the user
+    const res = await request(app).post('/api/auth/sync')
+      .set('Authorization', `Bearer ${token}`)
+      .send({ name: 'Updated Name', emirate: 'Abu Dhabi' });
+
     expect(res.status).toBe(200);
-    expect(res.body.token).toBeDefined();
+    expect(res.body.name).toBe('Updated Name');
+    expect(res.body.emirate).toBe('Abu Dhabi');
   });
 
-  it('POST /api/auth/login rejects wrong password', async () => {
-    await request(app).post('/api/auth/register')
-      .send({ email: 'wrong@example.com', password: 'Test1234!', name: 'Wrong', emirate: 'Dubai' });
-    const res = await request(app).post('/api/auth/login')
-      .send({ email: 'wrong@example.com', password: 'WrongPass!' });
-    expect(res.status).toBe(401);
+  it('POST /api/auth/sync rejects missing email for new user', async () => {
+    const res = await request(app)
+      .post('/api/auth/sync')
+      .set('Authorization', `Bearer ${makeToken('new-uid')}`)
+      .send({ name: 'No Email' });
+    expect(res.status).toBe(400);
   });
 
   it('GET /api/auth/me returns user with valid token', async () => {
-    const reg = await request(app).post('/api/auth/register')
-      .send({ email: 'me@example.com', password: 'Test1234!', name: 'Me', emirate: 'Dubai' });
+    const uid = 'firebase-uid-003';
+    const token = makeToken(uid);
+
+    await request(app).post('/api/auth/sync')
+      .set('Authorization', `Bearer ${token}`)
+      .send({ email: 'me@example.com', name: 'Me User' });
+
     const res = await request(app).get('/api/auth/me')
-      .set('Authorization', `Bearer ${reg.body.token}`);
+      .set('Authorization', `Bearer ${token}`);
     expect(res.status).toBe(200);
     expect(res.body.email).toBe('me@example.com');
   });
 
   it('GET /api/auth/me rejects missing token', async () => {
     const res = await request(app).get('/api/auth/me');
+    expect(res.status).toBe(401);
+  });
+
+  it('GET /api/auth/me rejects invalid token', async () => {
+    const res = await request(app).get('/api/auth/me')
+      .set('Authorization', 'Bearer invalid-token-xyz');
     expect(res.status).toBe(401);
   });
 });

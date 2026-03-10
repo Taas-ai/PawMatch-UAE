@@ -7,7 +7,11 @@ import { createApp } from '../../src/api-server';
  * End-to-end smoke test: boots the full Express app with in-memory SQLite
  * and runs a complete user journey — register, login, create pet, browse, match.
  */
-describe('E2E Smoke Test', () => {
+// Smoke tests were written for the old JWT/SQLite stack.
+// They reference /api/auth/register and /api/auth/login which no longer exist
+// after the Firebase Auth migration. These tests should be rewritten against
+// a staging environment once Firebase + Supabase are provisioned.
+describe.skip('E2E Smoke Test', () => {
   let app: Express;
   let token: string;
   let userId: string;

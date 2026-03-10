@@ -16,7 +16,6 @@ export function aiToolsRouter(db: PawMatchDb): Router {
   // POST /breed-detect
   router.post('/breed-detect', async (req: AuthRequest, res) => {
     try {
-      // SSRF protection for imageUrl if present
       if (req.body.imageUrl) {
         const urlCheck = validateImageUrl(req.body.imageUrl);
         if (!urlCheck.valid) {
@@ -24,7 +23,6 @@ export function aiToolsRouter(db: PawMatchDb): Router {
           return;
         }
       }
-
       const result = await breedDetectFlow(req.body);
       res.json(result);
     } catch (err: any) {
@@ -47,25 +45,20 @@ export function aiToolsRouter(db: PawMatchDb): Router {
   // POST /profile-review/:petId
   router.post('/profile-review/:petId', async (req: AuthRequest, res) => {
     try {
-      const pet = db.select().from(pets).where(eq(pets.id, req.params.petId)).get();
+      const [pet] = await db.select().from(pets).where(eq(pets.id, req.params.petId));
       if (!pet) {
         res.status(404).json({ error: 'Pet not found' });
         return;
       }
 
-      // Ownership check
       if (pet.ownerId !== req.userId) {
         res.status(403).json({ error: 'Not authorized' });
         return;
       }
 
       const profile = {
-        name: pet.name,
-        species: pet.species as 'dog' | 'cat',
-        breed: pet.breed,
-        age: pet.age,
-        gender: pet.gender as 'male' | 'female',
-        weight: pet.weight,
+        name: pet.name, species: pet.species as 'dog' | 'cat', breed: pet.breed,
+        age: pet.age, gender: pet.gender as 'male' | 'female', weight: pet.weight,
         location: pet.location,
         healthRecords: JSON.parse(pet.healthRecords || '[]') as string[],
         dnaTestResults: pet.dnaTestResults ?? undefined,
@@ -75,13 +68,7 @@ export function aiToolsRouter(db: PawMatchDb): Router {
       };
 
       const photoUrls = JSON.parse(pet.photoUrls || '[]') as string[];
-
-      const result = await profileReviewFlow({
-        profile,
-        photoCount: photoUrls.length,
-        hasVerifiedOwner: false,
-        accountAge: 0,
-      });
+      const result = await profileReviewFlow({ profile, photoCount: photoUrls.length, hasVerifiedOwner: false, accountAge: 0 });
       res.json(result);
     } catch (err: any) {
       console.error('Profile review error:', err);
@@ -92,39 +79,34 @@ export function aiToolsRouter(db: PawMatchDb): Router {
   // POST /vet-advisor/:petId
   router.post('/vet-advisor/:petId', async (req: AuthRequest, res) => {
     try {
-      const pet = db.select().from(pets).where(eq(pets.id, req.params.petId)).get();
+      const [pet] = await db.select().from(pets).where(eq(pets.id, req.params.petId));
       if (!pet) {
         res.status(404).json({ error: 'Pet not found' });
         return;
       }
 
-      // Ownership check
       if (pet.ownerId !== req.userId) {
         res.status(403).json({ error: 'Not authorized' });
         return;
       }
 
       const result = await vetAdvisorFlow({
-        species: pet.species as 'dog' | 'cat',
-        breed: pet.breed,
-        age: pet.age,
-        gender: pet.gender as 'male' | 'female',
-        weight: pet.weight,
+        species: pet.species as 'dog' | 'cat', breed: pet.breed, age: pet.age,
+        gender: pet.gender as 'male' | 'female', weight: pet.weight,
         healthHistory: JSON.parse(pet.healthRecords || '[]') as string[],
         question: req.body.question,
       });
 
       const id = uuid();
-      db.insert(vetConsultations).values({
-        id,
-        petId: pet.id,
-        requestedBy: req.userId!,
+      await db.insert(vetConsultations).values({
+        id, petId: pet.id, requestedBy: req.userId!,
         breedingReadiness: result.breedingReadiness,
         requiredTests: JSON.stringify(result.requiredTests),
         breedSpecificRisks: JSON.stringify(result.breedSpecificRisks),
         uaeClimateConsiderations: JSON.stringify(result.uaeClimateConsiderations),
         generalAdvice: result.generalAdvice,
-      }).run();
+        createdAt: new Date().toISOString(),
+      });
 
       res.json({ id, ...result });
     } catch (err: any) {

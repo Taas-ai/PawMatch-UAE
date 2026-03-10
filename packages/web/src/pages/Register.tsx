@@ -14,7 +14,7 @@ const EMIRATES = [
 ];
 
 export function Register() {
-  const { register } = useAuth();
+  const { registerWithEmail, loginWithGoogle, loginWithApple } = useAuth();
   const navigate = useNavigate();
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
@@ -23,14 +23,30 @@ export function Register() {
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
 
-  const handleGoogleLogin = () => {
-    // TODO: Integrate Google Sign-In SDK (gsi)
-    alert('Google Sign-In coming soon. Please use email/password for now.');
+  const handleGoogleLogin = async () => {
+    setError('');
+    setLoading(true);
+    try {
+      await loginWithGoogle();
+      navigate('/dashboard');
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Google sign-in failed');
+    } finally {
+      setLoading(false);
+    }
   };
 
-  const handleAppleLogin = () => {
-    // TODO: Integrate Apple Sign-In JS
-    alert('Apple Sign-In coming soon. Please use email/password for now.');
+  const handleAppleLogin = async () => {
+    setError('');
+    setLoading(true);
+    try {
+      await loginWithApple();
+      navigate('/dashboard');
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Apple sign-in failed');
+    } finally {
+      setLoading(false);
+    }
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -38,7 +54,7 @@ export function Register() {
     setError('');
     setLoading(true);
     try {
-      await register({ email, password, name, emirate });
+      await registerWithEmail(email, password, name, emirate);
       navigate('/dashboard');
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Registration failed');

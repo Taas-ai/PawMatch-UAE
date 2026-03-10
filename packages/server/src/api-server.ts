@@ -2,7 +2,7 @@ import express from 'express';
 import helmet from 'helmet';
 import cors from 'cors';
 import rateLimit from 'express-rate-limit';
-import { createDb } from '@pawmatch/db';
+import { createDb, type PawMatchDb } from '@pawmatch/db';
 import { authRouter } from './routes/auth';
 import { petsRouter } from './routes/pets';
 import { matchesRouter } from './routes/matches';
@@ -10,11 +10,10 @@ import { messagesRouter } from './routes/messages';
 import { aiToolsRouter } from './routes/ai-tools';
 import { contractsRouter } from './routes/contracts';
 import { resourcesRouter } from './routes/resources';
-import { socialAuthRouter } from './routes/social-auth';
 import { diagnosticsRouter } from './routes/diagnostics';
 
-export function createApp(dbPath: string = './pawmatch.db') {
-  const db = createDb(dbPath);
+export function createApp(dbOrUrl: string | PawMatchDb = process.env.DATABASE_URL || '') {
+  const db = typeof dbOrUrl === 'string' ? createDb(dbOrUrl) : dbOrUrl;
   const app = express();
 
   app.use(helmet());
@@ -69,7 +68,6 @@ export function createApp(dbPath: string = './pawmatch.db') {
   app.use('/api/auth', authLimiter);
 
   app.use('/api/auth', authRouter(db));
-  app.use('/api/auth', socialAuthRouter(db));
   app.use('/api/pets', petsRouter(db));
   app.use('/api/matches', matchesRouter(db));
   app.use('/api/messages', messagesRouter(db));
@@ -83,6 +81,6 @@ export function createApp(dbPath: string = './pawmatch.db') {
 
 if (require.main === module) {
   const port = process.env.PORT || 3001;
-  const app = createApp();
+  const app = createApp(process.env.DATABASE_URL);
   app.listen(port, () => console.log(`PawMatch API running on http://localhost:${port}`));
 }

@@ -1,82 +1,60 @@
 import { Router } from 'express';
-import bcrypt from 'bcryptjs';
-import { v4 as uuid } from 'uuid';
 import { eq } from 'drizzle-orm';
 import { users, PawMatchDb } from '@pawmatch/db';
-import { signToken, requireAuth, AuthRequest } from '../middleware/auth';
+import { requireAuth, AuthRequest } from '../middleware/auth';
 import { sanitizeUser } from '../utils/user';
 
 export function authRouter(db: PawMatchDb): Router {
   const router = Router();
 
-  router.post('/register', async (req, res) => {
+  // Called after Firebase sign-in to upsert user in Supabase
+  // Body: { email, name, emirate?, phone?, role? }
+  router.post('/sync', requireAuth, async (req: AuthRequest, res) => {
     try {
-      const { email, password, name, emirate, phone } = req.body;
-      if (!email || !password || !name) {
-        res.status(400).json({ error: 'email, password, and name are required' });
-        return;
-      }
+      const { email, name, emirate, phone, role } = req.body;
+      const uid = req.userId!;
 
-      // Email validation
-      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-      if (!emailRegex.test(email)) {
-        res.status(400).json({ error: 'Invalid email format' });
-        return;
-      }
+      const existing = await db.select().from(users).where(eq(users.id, uid));
 
-      // Password strength
-      if (password.length < 8) {
-        res.status(400).json({ error: 'Password must be at least 8 characters' });
-        return;
+      if (existing.length > 0) {
+        await db.update(users).set({
+          ...(name && { name }),
+          ...(emirate !== undefined && { emirate }),
+          ...(phone !== undefined && { phone }),
+          ...(role && { role }),
+          ...(email && { email }),
+        }).where(eq(users.id, uid));
+        const updated = await db.select().from(users).where(eq(users.id, uid));
+        res.json(sanitizeUser(updated[0]));
+      } else {
+        if (!email || !name) {
+          res.status(400).json({ error: 'email and name are required for new users' });
+          return;
+        }
+        const now = new Date().toISOString();
+        await db.insert(users).values({
+          id: uid,
+          email,
+          name,
+          emirate: emirate ?? null,
+          phone: phone ?? null,
+          role: role ?? 'owner',
+          kycVerified: 0 as any,
+          createdAt: now,
+          updatedAt: now,
+        });
+        const created = await db.select().from(users).where(eq(users.id, uid));
+        res.status(201).json(sanitizeUser(created[0]));
       }
-
-      const existing = db.select().from(users).where(eq(users.email, email)).get();
-      if (existing) {
-        res.status(409).json({ error: 'Email already registered' });
-        return;
-      }
-      const id = uuid();
-      const passwordHash = await bcrypt.hash(password, 10);
-      db.insert(users).values({ id, email, passwordHash, name, emirate, phone }).run();
-      const token = signToken(id);
-      res.status(201).json({ token, user: { id, email, name, emirate } });
     } catch (err) {
-      console.error('Registration error:', err);
-      res.status(500).json({ error: 'Registration failed' });
+      console.error('Sync error:', err);
+      res.status(500).json({ error: 'User sync failed' });
     }
   });
 
-  router.post('/login', async (req, res) => {
-    try {
-      const { email, password } = req.body;
-      if (!email || !password) {
-        res.status(400).json({ error: 'email and password are required' });
-        return;
-      }
-      const user = db.select().from(users).where(eq(users.email, email)).get();
-      if (!user) {
-        res.status(401).json({ error: 'Invalid credentials' });
-        return;
-      }
-      if (!user.passwordHash) {
-        res.status(400).json({ error: 'This account uses social login. Please sign in with Google or Apple.' });
-        return;
-      }
-      const valid = await bcrypt.compare(password, user.passwordHash);
-      if (!valid) {
-        res.status(401).json({ error: 'Invalid credentials' });
-        return;
-      }
-      const token = signToken(user.id);
-      res.json({ token, user: { id: user.id, email: user.email, name: user.name, emirate: user.emirate } });
-    } catch (err) {
-      console.error('Login error:', err);
-      res.status(500).json({ error: 'Login failed' });
-    }
-  });
-
-  router.get('/me', requireAuth, (req: AuthRequest, res) => {
-    const user = db.select().from(users).where(eq(users.id, req.userId!)).get();
+  router.get('/me', requireAuth, async (req: AuthRequest, res) => {
+    const result = await db.select().from(users).where(eq(users.id, req.userId!));
+    const user = result[0];
     if (!user) {
       res.status(404).json({ error: 'User not found' });
       return;
